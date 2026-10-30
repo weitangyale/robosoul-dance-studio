@@ -53,7 +53,7 @@ function stopPlayback(){playing=false;playToken++;document.getElementById('playD
 function resetPose(){stopPlayback();setPose(Array(joints.length).fill(0));announce('Reset to neutral pose.')}
 document.getElementById('reset').addEventListener('click',resetPose);
 function validPose(p){return Array.isArray(p)&&p.length===joints.length&&p.every(x=>typeof x==='number'&&Number.isFinite(x))}
-function durationValue(){const el=document.getElementById('frameDuration');const ms=Number(el.value);return Number.isFinite(ms)?Math.max(100,Math.min(10000,Math.round(ms))):600}
+function durationValue(){const el=document.getElementById('frameDuration');const ms=Number(el.value);return Number.isFinite(ms)?Math.max(100,Math.min(10000,Math.round(ms))):500}
 function makeButton(label,action){const b=document.createElement('button');b.textContent=label;b.addEventListener('click',action);return b}
 function renderPoses(){
  const list=document.getElementById('savedPoses');list.replaceChildren();
@@ -73,11 +73,51 @@ function renderPoses(){
   item.append(name,actions);list.append(item);
  });
 }
-function renderFrames(){const list=document.getElementById('timeline');list.replaceChildren();document.getElementById('frameCount').textContent=frames.length+' frame'+(frames.length===1?'':'s');if(!frames.length){list.textContent='No frames yet. Add Frame to build a dance.';return}frames.forEach((f,i)=>{const item=document.createElement('div');item.className='item'+(i===selected?' selected':'');const top=document.createElement('div');top.className='item-line';const name=document.createElement('strong');name.textContent='Frame '+(i+1);const d=document.createElement('input');d.type='number';d.min=100;d.max=10000;d.step=100;d.value=f.duration;d.title='Duration in milliseconds';d.addEventListener('change',()=>{const v=Number(d.value);f.duration=Number.isFinite(v)?Math.max(100,Math.min(10000,Math.round(v))):600;d.value=f.duration});const ms=document.createElement('span');ms.textContent='ms';top.append(name,d,ms);const actions=document.createElement('div');actions.className='item-actions';actions.append(makeButton('View',()=>{stopPlayback();selected=i;setPose(f.angles);renderFrames();announce('Viewing frame '+(i+1))}),makeButton('Update',()=>{stopPlayback();f.angles=getPose();selected=i;renderFrames();announce('Updated frame '+(i+1))}),makeButton('↑',()=>{if(i>0){[frames[i-1],frames[i]]=[frames[i],frames[i-1]];selected=-1;renderFrames()}}),makeButton('↓',()=>{if(i<frames.length-1){[frames[i+1],frames[i]]=[frames[i],frames[i+1]];selected=-1;renderFrames()}}),makeButton('Delete',()=>{stopPlayback();frames.splice(i,1);selected=-1;renderFrames()}));item.append(top,actions);list.append(item)})}
+function renderFrames(){const list=document.getElementById('timeline');list.replaceChildren();document.getElementById('frameCount').textContent=frames.length+' frame'+(frames.length===1?'':'s');if(!frames.length){list.textContent='No frames yet. Add Frame to build a dance.';return}frames.forEach((f,i)=>{const item=document.createElement('div');item.className='item'+(i===selected?' selected':'');const top=document.createElement('div');top.className='item-line';const name=document.createElement('strong');name.textContent='Frame '+(i+1);const d=document.createElement('input');d.type='number';d.min=100;d.max=10000;d.step=100;d.value=f.duration;d.title='Duration in milliseconds';d.addEventListener('change',()=>{const v=Number(d.value);f.duration=Number.isFinite(v)?Math.max(100,Math.min(10000,Math.round(v))):500;d.value=f.duration});const ms=document.createElement('span');ms.textContent='ms';top.append(name,d,ms);const actions=document.createElement('div');actions.className='item-actions';actions.append(makeButton('Duplicate',()=>{stopPlayback();frames.splice(i+1,0,{angles:f.angles.slice(),duration:f.duration});selected=i+1;renderFrames();announce('Duplicated frame '+(i+1)+' as frame '+(i+2))}),makeButton('View',()=>{stopPlayback();selected=i;setPose(f.angles);renderFrames();announce('Viewing frame '+(i+1))}),makeButton('Update',()=>{stopPlayback();f.angles=getPose();selected=i;renderFrames();announce('Updated frame '+(i+1))}),makeButton('↑',()=>{if(i>0){[frames[i-1],frames[i]]=[frames[i],frames[i-1]];selected=-1;renderFrames()}}),makeButton('↓',()=>{if(i<frames.length-1){[frames[i+1],frames[i]]=[frames[i],frames[i+1]];selected=-1;renderFrames()}}),makeButton('Delete',()=>{stopPlayback();frames.splice(i,1);selected=-1;renderFrames()}));item.append(top,actions);list.append(item)})}
 document.getElementById('savePose').addEventListener('click',()=>{stopPlayback();savedPoses.push({name:'Pose '+(savedPoses.length+1),angles:getPose()});renderPoses();announce('Pose saved. Use Apply to recall it.')});
 document.getElementById('addFrame').addEventListener('click',()=>{stopPlayback();frames.push({duration:durationValue(),angles:getPose()});selected=frames.length-1;renderFrames();announce('Added frame '+frames.length)});
 function lerpPose(a,b,t){return a.map((v,i)=>v+(b[i]-v)*t)}
-async function playDance(){if(!frames.length){announce('Add at least one frame first.');return}stopPlayback();playing=true;const token=playToken;document.getElementById('playDance').disabled=true;announce('Playing '+frames.length+' frames…');let from=getPose();for(let i=0;i<frames.length;i++){if(!playing||token!==playToken)return;selected=i;renderFrames();const to=frames[i].angles.slice();const duration=frames[i].duration;const start=performance.now();await new Promise(resolve=>{function tick(now){if(!playing||token!==playToken){resolve();return}const t=Math.min(1,(now-start)/duration);setPose(lerpPose(from,to,t));if(t<1)requestAnimationFrame(tick);else resolve()}requestAnimationFrame(tick)});from=to}if(token===playToken){playing=false;document.getElementById('playDance').disabled=false;announce('Dance complete!')}}
+async function playDance(){
+ if(!frames.length){announce('Add at least one frame first.');return}
+ stopPlayback();
+ playing=true;
+ const token=playToken;
+ const playButton=document.getElementById('playDance');
+ const loopInput=document.getElementById('loopDance');
+ const speedInput=document.getElementById('playbackSpeed');
+ playButton.disabled=true;
+ let from=getPose();
+ let cycle=0;
+ try {
+  do {
+   for(let i=0;i<frames.length;i++){
+    if(!playing||token!==playToken)return;
+    selected=i;renderFrames();
+    const to=frames[i].angles.slice();
+    const speed=Number(speedInput.value)||1;
+    const duration=frames[i].duration/speed;
+    announce('Playing frame '+(i+1)+'/'+frames.length+' · '+speed+'×'+(loopInput.checked?' · Loop':''));
+    const start=performance.now();
+    await new Promise(resolve=>{
+     function tick(now){
+      if(!playing||token!==playToken){resolve();return}
+      const t=Math.min(1,(now-start)/duration);
+      setPose(lerpPose(from,to,t));
+      if(t<1)requestAnimationFrame(tick);
+      else resolve();
+     }
+     requestAnimationFrame(tick);
+    });
+    if(!playing||token!==playToken)return;
+    from=to;
+   }
+   cycle++;
+  } while(playing&&token===playToken&&loopInput.checked&&frames.length);
+  if(playing&&token===playToken)announce('Dance complete!');
+ } finally {
+  if(token===playToken){playing=false;playButton.disabled=false}
+ }
+}
 document.getElementById('playDance').addEventListener('click',playDance);
 document.getElementById('stopDance').addEventListener('click',()=>{stopPlayback();announce('Playback stopped.')});
 document.getElementById('downloadDance').addEventListener('click',()=>{const data={format:'RoboSoulDanceStudio',version:1,joints:joints.map(j=>({name:j.name,min:j.min,max:j.max})),poses:savedPoses,frames};const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='las-cruces-academy-dance.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);announce('Dance JSON downloaded.')});
