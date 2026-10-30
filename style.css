@@ -6,3 +6,10 @@
 #savedPoses .item-line{align-items:flex-start;flex-direction:column;gap:7px}
 #savedPoses .item-actions{width:100%}
 #savedPoses .item-actions button{white-space:nowrap}
+
+
+/* V7 playback controls */
+.playback-options{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:9px 10px;margin:8px 0;background:#f0f6fb;border-radius:6px;font-size:12px}
+.playback-options label{display:flex;align-items:center;gap:7px;cursor:pointer}
+.playback-options input[type=checkbox]{accent-color:#1769aa;width:16px;height:16px}
+.playback-options select{padding:5px 8px;border:1px solid #bac9d7;border-radius:5px;background:white;color:#17263a}
