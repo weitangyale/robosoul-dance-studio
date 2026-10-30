@@ -1,9 +1,15 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>RoboSoul Dance Studio V6</title><link rel="stylesheet" href="./style.css"><script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script><script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script></head><body><header><strong>RoboSoul Dance Studio</strong><span>Las Cruces Academy · 16 Joint Prototype</span></header><main><div id="robot"></div><aside><div class="top"><b>Joint Controls</b><button id="reset">Reset Pose</button></div><div class="dance-panel">
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>RoboSoul Dance Studio V8</title><link rel="stylesheet" href="./style.css"><script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script><script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script></head><body><header><strong>RoboSoul Dance Studio</strong><span>Las Cruces Academy · 16 Joint Prototype</span></header><main><div id="robot"></div><aside><div class="top"><b>Joint Controls</b><button id="reset">Reset Pose</button></div><div class="dance-panel">
 <h3>Dance Choreography</h3>
-<p class="hint">Set joint angles, then Add Frame. Save Pose stores a reusable pose. Use Add to Dance beside any saved pose to add it directly to the timeline.</p>
+<p class="hint">Set joint angles, then Add Frame. Save Pose stores a reusable pose. Use Add to Dance beside any saved pose to add it directly to the timeline. Duplicate any frame to repeat a move.</p>
 <div class="buttons"><button id="savePose">Save Pose</button><button id="addFrame">Add Frame</button><button id="playDance">▶ Play Dance</button><button id="stopDance" class="secondary">■ Stop</button></div>
-<div class="duration"><label for="frameDuration">New frame duration (ms)</label><input id="frameDuration" type="number" min="100" max="10000" step="100" value="600"></div>
+<div class="playback-options">
+<label class="loop-control"><input type="checkbox" id="loopDance"> Loop Dance</label>
+<label for="playbackSpeed">Playback Speed
+<select id="playbackSpeed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option></select>
+</label>
+</div>
+<div class="duration"><label for="frameDuration">New frame duration (ms)</label><input id="frameDuration" type="number" min="100" max="10000" step="100" value="500"></div>
 <div id="status" role="status" aria-live="polite">Ready. Add a frame to begin.</div>
 <h4>Saved Poses</h4><div id="savedPoses" class="items"></div>
 <h4>Dance Timeline <span id="frameCount">0 frames</span></h4><div id="timeline" class="items"></div>
